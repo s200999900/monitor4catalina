@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM
+        "/WEB-INF/classes/com/tomcat/monitor/logging/log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+	<appender name="LOGGING" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="${tomcat.logdir}/portal.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="threshold" value="info" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value=" %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="WARN" />
+			<param name="LevelMax" value="WARN" />
+		</filter>
+	</appender>
+
+	<appender name="EMAIL" class="org.apache.log4j.net.SMTPAppender">
+		<param name="BufferSize" value="512" />
+		<param name="SMTPHost" value="192.168.31.15" />
+		<param name="From" value="portalneu@bauholding.at" />
+		<param name="To" value="swmeldungen@bauholding.at" />
+		<param name="Subject" value="Portal 04.02.050 auf LocalHost" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%F:%L]%n[%t]%n%-5p%n%c%n%m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="ERROR" />
+			<param name="LevelMax" value="FATAL" />
+		</filter>
+	</appender>
+
+	<appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+		<param name="Target" value="System.out" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p %c [%d{ISO8601}] - %m %n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="DEBUG" />
+			<param name="LevelMax" value="INFO" />
+		</filter>
+	</appender>
+
+	<appender name="STDERR" class="org.apache.log4j.ConsoleAppender">
+		<param name="Target" value="System.err" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p %c [%t] [%F:%L] - %m %n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="ERROR" />
+			<param name="LevelMax" value="FATAL" />
+		</filter>
+	</appender>
+
+	<root>
+		<level value="INFO" />
+		<appender-ref ref="LOGGING" />
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="STDERR" />
+		<!-- <appender-ref ref="EMAIL" />-->
+	</root>
+
+</log4j:configuration>
