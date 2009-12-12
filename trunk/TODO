@@ -1,0 +1,81 @@
+a)      Nach System.out sollte man besser nicht schreiben.
+       Umstellung auf log4j ist ratsam
+b)      Das JMX Servlet hat eine komische Aufgabenaufteilung
+               Ausgabeformatierer
+               Accessor für die Daten
+       =>
+               Besser wäre es das der Daten Accessor in dem Listener gestartet wird,
+               Das JMXServlet könnte dann via ServletContext Attribute das Bean bekommen.
+       !! Verwednung von statischen Methoden solltet Ihr lassen!
+
+c)      Die Parameter sollten lieber via web.xml und nicht durch eine zusätzliche Properties Datei übergeben werden.
+       Vielleicht ist eine Mischung von System.Properties und web.xml Context-parameter ratsam!
+               => Die Parameter ändern sich zur Laufzeit nicht und müssen deshalb nur einmal und nicht bei jedem Zugriff
+                       gelesen werden!
+
+d)      Den Zugriff auf die jvmRoute via System Properties hat nicht jeder so!
+               Alternative kann die Anwendung priviligiert werden und dann auf die Internen Tomcat Klassen zugreifen :-)
+
+e)       Die Ermittlung von MyContext im JMXServlet ist komisch!
+       Den Eigenen Contextnamen kann man via ServletContext herausfinden.
+               this.getServletContext().getContexPath();
+
+f)      Es fehlen die Unit Tests :-)
+
+g)      MServer
+               Hier muss ich die FixME noch bearbeiten
+               Besserer Zugriff auf OpenMBeans
+               Englische Kommentare und Beispiel
+
+h)      Was ist Ostermillerutils ?
+       Wo wird das genutzt?
+
+i)      Die Formatierung der Daten für den Zabbix Server sollte man in eine eigene Funktion legen die wir austauschen können!
+               Dann könnte jemand die Daten auch mit einem anderen Server Socket übernehmen :-)
+               Die Konstruktion kann in dem Listener erfolgen.
+
+j)      Beispiel für JMX Query:
+
+            HashMap<String,String> attributes = new HashMap<String,String>() ;
+
+             Set onames = mserver.getMserver().queryNames(
+               new ObjectName("Catalina:type=DataSource,*"),  null);
+             attributes.clear();
+                     attributes.put("numIdle", null) ;
+                     attributes.put("numActive", null) ;
+
+             Iterator it = onames.iterator();
+             while (it.hasNext()) {
+               ObjectName oname = (ObjectName) it.next();
+                       values = mserver.values(oname,attributes) ;
+               String name = oname.getKeyProperty("name");
+               String prefix = "Catalina.DataSource." + name   ;
+               String path = oname.getKeyProperty("path");
+               if(path != null)
+                   prefix += "." + path ;
+                       writer.println( prefix + ".numIdle=" + values.get("numIdle"));
+                       writer.println( prefix + ".numActive=" + values.get("numActive"));
+
+            }
+
+             onames = mserver.getMserver().queryNames(
+               new ObjectName("Catalina:type=Manager,*"),  null);
+             attributes.clear();
+                     attributes.put("activeSessions", null) ;
+                     attributes.put("expiredSessions", null) ;
+                     attributes.put("sessionCounter", null) ;
+
+             it = onames.iterator();
+             while (it.hasNext()) {
+               ObjectName oname = (ObjectName) it.next();
+                       values = mserver.values(oname,attributes) ;
+               String path = oname.getKeyProperty("path");
+               String prefix = "Catalina.SessionManager." + path   ;
+               String host = oname.getKeyProperty("host");
+               if(host != null)
+                   prefix += "." + host ;
+                       writer.println( prefix + ".activeSessions=" + values.get("activeSessions"));
+                       writer.println( prefix + ".expiredSessions=" + values.get("expiredSessions"));
+                       writer.println( prefix + ".sessionCounter=" + values.get("sessionCounter"));
+
+            }

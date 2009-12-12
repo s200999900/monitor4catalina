@@ -1,0 +1,92 @@
+<project name="monitor" default="build.war" basedir="..">
+
+    <property file="build/global.properties"/>
+
+    <property name="dist"                  value="${basedir}/dist"/>
+    <property name="build"                 value="${basedir}/build"/>
+    <property name="webinf.libs"           value="${basedir}/WebContent/WEB-INF/lib"/>
+    <property name="webapp.base"           value="${basedir}/WebContent"/>
+    <property name="dist.env"              value="ii/${target.env}"/>
+    <property name="webapp.warname"        value="${context.name}-${webapp.version.prefix}-${webapp.version}" />
+
+    <tstamp>
+        <format property="TODAY" pattern="yyyyMMdd.HHmmss" />
+    </tstamp>
+    
+    <path id="tomcat-libs">
+        <fileset dir="${tomcat.home}/lib" includes="*.jar"/>
+    </path>
+
+    <path id="webinf-libs">
+        <fileset dir="${webinf.libs}" includes="*.jar"/>
+    </path>
+
+    <path id="classpath">
+        <path refid="tomcat-libs"/>
+        <path refid="webinf-libs"/>
+    </path>
+    
+    <fileset id="target.produktiv" dir="${webapp.base}">
+        <exclude name="**/*.xml" />
+        <exclude name="WEB-INF/classes/**/*.*"/>
+    </fileset>
+    
+    <fileset id="target.other" dir="${webapp.base}">
+        <exclude name="**/*.xml" />
+        <exclude name="WEB-INF/classes/**/*.*"/>
+    </fileset>
+    
+    <target name="prepare">
+        <delete dir="${build}/webcontent"/>
+        <delete dir="${dist}/${dist.env}"/>
+        <mkdir dir="${build}/webcontent"/>
+        <mkdir dir="${build}/webcontent/WEB-INF/classes"/>
+        <mkdir dir="${dist}/${dist.env}"/>
+    </target>
+
+    <target name="war.prepare">
+        <copy todir="${build}/webcontent">
+            <fileset refid="${used.fileset}"/>
+        </copy>
+
+        <filter token="buildnumber" value="${TODAY}"/>
+        <filter token="versionnumber" value="${webapp.version}"/>
+        <copy todir="${build}/webcontent" filtering="true">
+            <fileset dir="${webapp.base}">
+                <include name="**/*.xml" />
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="compile" depends="prepare"
+            description="Compile Java files and copy static files.">
+
+        <javac srcdir="${basedir}/src" target="1.6" source="1.6"
+               destdir="${build}/webcontent/WEB-INF/classes" debug="true" debuglevel="vars,lines,source">
+            <include name="**/*.java"/>
+            <classpath refid="classpath"/>
+        </javac>
+        <copy todir="${build}/webcontent/WEB-INF/classes">
+            <fileset dir="${basedir}/src">
+                <include name="**/*.properties"/>
+                <include name="**/*.xml"/>
+                <include name="**/*.dtd"/>
+                <include name="**/*.xsd"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="build.war" depends="compile, war.prepare">
+        <copy todir="${build}/webcontent" overwrite="true" verbose="true">
+           <fileset dir="${build}/${dist.env}">
+                <include name="**/*.*"/>
+           </fileset>
+        </copy>
+        <mkdir dir="${dist}/${dist.env}"/>
+        <war basedir="${build}/webcontent" 
+             destfile="${dist}/${dist.env}/${webapp.warname}.war" />
+        <delete dir="${build}/webcontent"/>
+        <eclipse.refreshLocal resource="${basedir}" depth="infinite"/>
+    </target>
+
+</project>
