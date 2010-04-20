@@ -53,8 +53,8 @@
 	<root>
 		<level value="ALL" />
 		<appender-ref ref="LOGGING" />
-		<appender-ref ref="STDOUT" />
-		<appender-ref ref="STDERR" />
+		<!-- <appender-ref ref="STDOUT" /> -->
+		<!-- <appender-ref ref="STDERR" /> -->
 		<!-- <appender-ref ref="EMAIL" />-->
 	</root>
 

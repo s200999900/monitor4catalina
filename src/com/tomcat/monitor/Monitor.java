@@ -25,6 +25,7 @@ package com.tomcat.monitor;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.management.ObjectName;
 
@@ -33,6 +34,11 @@ import org.apache.log4j.Logger;
 import com.tomcat.monitor.jmx.obj.bean.MServer;
 
 public class Monitor {
+
+   private static final String ATTRIB_ACTIVE_CONNS = "numActive";
+   private static final String ATTRIB_IDLE_CONNS = "numIdle";
+   
+   private static final String TYPE_DATA_SOURCE = "DataSource";
 
    protected final static Logger log = Logger.getLogger(Monitor.class);
    private static final MServer mserver = new MServer();
@@ -82,10 +88,37 @@ public class Monitor {
                + sysProp.getMonitorGRPName()), attributes);
          resultSet.put("tomcat.requestCount", values.get("requestCount").toString());
 
+         
+         // Connections
+         String nameStr;
+         String attribkey;
+         for (String n : sysProp.getCatalinaPath()) {
+            Set<ObjectName> onames = mserver.getMserver().queryNames(new ObjectName("Catalina:type=" + TYPE_DATA_SOURCE
+                  + ",path=" + n + ",host=" + sysProp.getCatalinaHost() + ",*"),
+                  null);
+
+            for (ObjectName objectName : onames) {
+               attributes.clear();
+               attributes.put(ATTRIB_ACTIVE_CONNS, null);
+               values = mserver.values(objectName, attributes);
+               
+               nameStr = objectName.toString();
+               attribkey = "tomcat.activeConnections." + n.substring(1)+"."+nameStr.substring(nameStr.indexOf("name=")+5).replace("\"", "");
+               resultSet.put(attribkey, values.get(ATTRIB_ACTIVE_CONNS).toString());
+               
+               attributes.clear();
+               attributes.put(ATTRIB_IDLE_CONNS, null);
+               values = mserver.values(objectName, attributes);
+               
+               attribkey = attribkey.replace("activeConnections", "idleConnections");
+               resultSet.put(attribkey, values.get(ATTRIB_IDLE_CONNS).toString());
+            }
+         }
+
       } catch (Exception ex) {
          ex.printStackTrace();
       }
-      ;
+
       return resultSet;
    }
 }
