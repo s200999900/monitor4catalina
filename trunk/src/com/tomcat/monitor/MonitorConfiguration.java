@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -38,8 +37,8 @@ import javax.management.ObjectName;
 
 import com.tomcat.monitor.jmx.obj.bean.MServer;
 
-public class SystemProperty {
-
+public class MonitorConfiguration {
+   
    private List<String> monitorExpressCatalinaContext;
    private List<String> monitorSuppressCatalinaContext;
 
@@ -56,15 +55,15 @@ public class SystemProperty {
    private List<String> catalinaPath = new ArrayList<String>();
    private String catalinaHost;
 
-   public SystemProperty() {
+   public MonitorConfiguration() {
       super();
 
       final MServer mserver = new MServer();
       InetAddress localMachine;
       try {
-         ResourceBundle bundle = ResourceBundle.getBundle("com.tomcat.monitor.System");
+         
 
-         String expressContext = bundle.getString("monitor.expressCatalinaContext");
+         String expressContext = ConfigurationReader.get("monitor.expressCatalinaContext");
 
          if (expressContext != null && !"".equals(expressContext.trim())) {
             StringTokenizer tokenizer = new StringTokenizer(expressContext, ",");
@@ -75,7 +74,7 @@ public class SystemProperty {
             }
          }
 
-         String suppressContext = bundle.getString("monitor.suppressCatalinaContext");
+         String suppressContext = ConfigurationReader.get("monitor.suppressCatalinaContext");
 
          if (suppressContext != null && !"".equals(suppressContext.trim())) {
             StringTokenizer tokenizer = new StringTokenizer(suppressContext, ",");
@@ -144,7 +143,7 @@ public class SystemProperty {
             }
          }
 
-         String helperCatalinaHostname = bundle.getString("zabbix.catalinaHostname").trim();
+         String helperCatalinaHostname = ConfigurationReader.get("zabbix.catalinaHostname").trim();
          // if no zabbix.catalinaHostname is given read it from inetAddress
          if (helperCatalinaHostname.isEmpty()) {
             localMachine = InetAddress.getLocalHost();
@@ -166,7 +165,7 @@ public class SystemProperty {
 
          }
 
-         String Types = bundle.getString("monitor.types");
+         String Types = ConfigurationReader.get("monitor.types");
 
          if (Types != null && !"".equals(Types.trim())) {
             StringTokenizer tokenizer = new StringTokenizer(Types, ",");
@@ -177,7 +176,7 @@ public class SystemProperty {
             }
          }
 
-         String BackendSender = bundle.getString("monitor.backendSender");
+         String BackendSender = ConfigurationReader.get("monitor.backendSender");
 
          if (Types != null && !"".equals(BackendSender.trim())) {
             StringTokenizer tokenizer = new StringTokenizer(BackendSender, ",");
@@ -188,11 +187,12 @@ public class SystemProperty {
             }
          }
         
-         this.zabbixServer = bundle.getString("zabbix.server").trim();
-         this.zabbixPort = new Integer(bundle.getString("zabbix.port").trim());
-         this.zabbixTimeout = new Integer(bundle.getString("zabbix.timeout").trim());
-         this.monitorGRPName = bundle.getString("monitor.globalRequestProcessorName").trim();
-//         this.monitorBackendSender = bundle.getString("monitor.backendSender").trim();
+         this.zabbixServer = ConfigurationReader.get("zabbix.server").trim();
+         this.zabbixPort = new Integer(ConfigurationReader.get("zabbix.port").trim());
+         this.zabbixTimeout = new Integer(ConfigurationReader.get("zabbix.timeout").trim());
+         this.monitorGRPName = ConfigurationReader.get("monitor.globalRequestProcessorName").trim();
+         // this.monitorBackendSender =
+         // ConfigurationReader.get("monitor.backendSender").trim();
 
       } catch (UnknownHostException e) {
          e.printStackTrace();
@@ -202,7 +202,8 @@ public class SystemProperty {
          e.printStackTrace();
       }
    }
-
+         
+   //named GETTER
    public List<String> getMonitorBackendSender() {
       return monitorBackendSender;
    }

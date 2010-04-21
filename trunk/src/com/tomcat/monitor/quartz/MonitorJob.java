@@ -34,7 +34,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.tomcat.monitor.Monitor;
-import com.tomcat.monitor.SystemProperty;
+import com.tomcat.monitor.MonitorConfiguration;
 import com.tomcat.monitor.zabbix.ZabbixSender;
 
 public class MonitorJob implements Job {
@@ -55,13 +55,13 @@ public class MonitorJob implements Job {
          // MServlet.doRun(0);
 
          Monitor mon = new Monitor();
-         SystemProperty sysProp = new SystemProperty();
+         MonitorConfiguration sysProp = new MonitorConfiguration();
          HashMap<String, String> resultSet;
          
          ZabbixSender sender = new ZabbixSender();
 
          if (sysProp.getMonitorTypes().contains("getJMXValues")) {
-            resultSet = mon.getJMXValues();
+            resultSet = mon.getJMXValues(Monitor.MODE_QUARTZ);
 
             if (sysProp.getMonitorBackendSender().contains("zabbix")) {
                Set<Map.Entry<String, String>> set = resultSet.entrySet();
