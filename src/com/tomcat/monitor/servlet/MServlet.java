@@ -39,7 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 
 import com.tomcat.monitor.Monitor;
-import com.tomcat.monitor.SystemProperty;
+import com.tomcat.monitor.MonitorConfiguration;
 
 public class MServlet extends HttpServlet {
 
@@ -66,14 +66,14 @@ public class MServlet extends HttpServlet {
 
       try {
          writer.println("JMX-Values:</br></br>");
-         SystemProperty sysProp = new SystemProperty();
+         MonitorConfiguration sysProp = new MonitorConfiguration();
          Monitor mon = new Monitor();
 
          log.info(sysProp.getSystemHostname() + sysProp.getZabbixServer() + sysProp.getZabbixPort().toString()
                + sysProp.getZabbixTimeout().toString() + sysProp.getCatalinaHost()
                + sysProp.getCatalinaPath().toString() + sysProp.getMonitorGRPName());
 
-         HashMap<String, String> resultSet = mon.getJMXValues();
+         HashMap<String, String> resultSet = mon.getJMXValues(Monitor.MODE_SERVLET);
 
          Set<Map.Entry<String, String>> set = resultSet.entrySet();
 

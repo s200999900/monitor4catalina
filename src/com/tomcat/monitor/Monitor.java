@@ -22,11 +22,19 @@
 
 package com.tomcat.monitor;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 import org.apache.log4j.Logger;
@@ -35,6 +43,9 @@ import com.tomcat.monitor.jmx.obj.bean.MServer;
 
 public class Monitor {
 
+   public static final int MODE_QUARTZ = 0;
+   public static final int MODE_SERVLET = 1;
+   
    private static final String ATTRIB_ACTIVE_CONNS = "numActive";
    private static final String ATTRIB_IDLE_CONNS = "numIdle";
    
@@ -43,14 +54,14 @@ public class Monitor {
    protected final static Logger log = Logger.getLogger(Monitor.class);
    private static final MServer mserver = new MServer();
 
-   public HashMap<String, String> getJMXValues() throws IOException {
+   public HashMap<String, String> getJMXValues(int mode) {
 
       HashMap<String, String> resultSet = new HashMap<String, String>();
 
       try {
          resultSet.clear();
 
-         SystemProperty sysProp = new SystemProperty();
+         MonitorConfiguration sysProp = new MonitorConfiguration();
 
          log.info(sysProp.getSystemHostname() + sysProp.getZabbixServer() + sysProp.getZabbixPort().toString()
                + sysProp.getZabbixTimeout().toString() + sysProp.getCatalinaHost()
@@ -92,7 +103,69 @@ public class Monitor {
          // Connections
          String nameStr;
          String attribkey;
+         StringBuilder urlStr;
          for (String n : sysProp.getCatalinaPath()) {
+            if (ConfigurationReader.isServletMonitoringEnabled()) {
+               
+               HttpURLConnection conn = null;
+               BufferedReader in = null;
+               try {
+                  String monitorAttribs = ConfigurationReader.get(ConfigurationReader.KEY_MONITOR_SERVLET_PARAMETER);
+                  urlStr = new StringBuilder();
+                  urlStr.append(ConfigurationReader.get(ConfigurationReader.KEY_MONITOR_SERVLET_PROTOCOL));
+                  urlStr.append("://");
+                  urlStr.append(ConfigurationReader.get(ConfigurationReader.KEY_MONITOR_SERVLET_HOST));
+                  String port = ConfigurationReader.get(ConfigurationReader.KEY_MONITOR_SERVLET_PORT);
+                  if (port != null && !"".equals(port.trim())) {
+                     urlStr.append(":");
+                     urlStr.append(port);
+                  }
+                  urlStr.append(n);
+                  urlStr.append("/");
+                  urlStr.append(ConfigurationReader.get(ConfigurationReader.KEY_MONITOR_SERVLET_PATH));
+                  urlStr.append("?attrib=");
+                  urlStr.append(monitorAttribs);
+
+                  URL url = new URL(urlStr.toString());
+                  conn = (HttpURLConnection) url.openConnection();
+                  conn.setConnectTimeout(ConfigurationReader.getServletMonitorTimeout());
+                  in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                  String inputLine;
+
+                  List<String> lines = new LinkedList<String>(); 
+                  while ((inputLine = in.readLine()) != null)
+                     lines.add(inputLine);
+                  
+                  StringTokenizer tokenizer = new StringTokenizer(monitorAttribs);
+                  String attrib;
+                  String value = "0";
+                  while (tokenizer.hasMoreTokens()){
+                     attrib = tokenizer.nextToken();
+                     for (String line : lines){
+                        if (line.contains(attrib)){
+                           value=line.replace(attrib+"=", "").trim();
+                           break;
+                        }
+                     }
+                     resultSet.put("tomcat.monitor." + n.substring(1)+"."+attrib, value);
+                  }
+                  
+               } catch (IOException ex) {
+                  log.error("servletmonitoring", ex);
+                  if (mode == MODE_SERVLET)
+                     resultSet.put("tomcat.monitor." + n.substring(1)+"(Servlet only)", ex.getMessage());
+               } finally {
+                  try{
+                     if (in!= null)
+                        in.close();
+                  } catch (IOException ex){
+                     log.error("Reader close", ex);
+                  }
+                  if (conn != null)
+                     conn.disconnect();
+               }
+            }
+            
             Set<ObjectName> onames = mserver.getMserver().queryNames(new ObjectName("Catalina:type=" + TYPE_DATA_SOURCE
                   + ",path=" + n + ",host=" + sysProp.getCatalinaHost() + ",*"),
                   null);
@@ -115,8 +188,8 @@ public class Monitor {
             }
          }
 
-      } catch (Exception ex) {
-         ex.printStackTrace();
+      } catch (MalformedObjectNameException ex) {
+         log.error("monitor", ex);
       }
 
       return resultSet;
